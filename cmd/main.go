@@ -15,16 +15,21 @@ func init() {
 	router.AddGet("/template", (*handler.Hdl).TemplateHandle)
 }
 
+const addr = ":8080"
+
 func main() {
 	godotenv.Load()
 
 	logger.Init(true, false)
-	defer logger.Destory()
+	defer func() {
+		logger.Log("server stopped")
+		logger.Destory()
+	}()
 
 	handler.StaticHandle("/static/")
 	http.Handle("/", handler.RecoveryMiddleware(http.HandlerFunc(router.Router)))
 
-	logger.Log("server starting on :8080")
-	err := http.ListenAndServe(":8080", nil)
+	logger.Log("server starting on " + addr)
+	err := http.ListenAndServe(addr, nil)
 	logger.ErrCheck(err)
 }
