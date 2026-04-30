@@ -5,6 +5,7 @@ import (
 
 	config "github.com/itoken417/go-simple-webapp/configs"
 	"github.com/itoken417/go-simple-webapp/internal/handler"
+	"github.com/itoken417/go-simple-webapp/internal/middleware"
 	"github.com/itoken417/go-simple-webapp/internal/router"
 	"github.com/itoken417/goutils/logger"
 	"github.com/itoken417/goutils/mailsender"
@@ -12,36 +13,50 @@ import (
 )
 
 func init() {
-	router.Add("/", (*handler.Hdl).HelloHandle)
-	router.AddPost("/test", (*handler.Hdl).TestHandle)
-	router.AddGet("/template", (*handler.Hdl).TemplateHandle)
-	router.AddPost("/mail", (*handler.Hdl).MailHandle)
+	router.Add("/", (*handler.Hdl).Hello)
+	router.AddPost("/test", (*handler.Hdl).Test)
+	router.AddGet("/template", (*handler.Hdl).Template)
+	router.AddGet("/mail", (*handler.Hdl).MailForm)
+	router.AddPost("/mail", (*handler.Hdl).Mail)
+	router.Add("/panic", (*handler.Hdl).Panic)
+	router.AddGet("/csrf", (*handler.Hdl).CsrfForm)
+	router.AddPost("/csrf", (*handler.Hdl).Csrf)
 }
 
 const addr = ":8080"
 
 func main() {
-	godotenv.Load()
-
-	cfg := config.Get()
-	handler.InitMailSender(mailsender.Config{
-		Host:     cfg.SMTPHost,
-		Port:     cfg.SMTPPort,
-		User:     cfg.SMTPUser,
-		Password: cfg.SMTPPassword,
-		From:     cfg.SMTPFrom,
-	}, cfg.SMTPTo)
-
 	logger.Init(true, false)
 	defer func() {
 		logger.Log("server stopped")
 		logger.Destory()
 	}()
 
-	handler.StaticHandle("/static/")
-	http.Handle("/", handler.RecoveryMiddleware(http.HandlerFunc(router.Router)))
+	godotenv.Load()
+
+	cfg, err := config.Get()
+	if err != nil {
+		logger.Log("設定の読み込みに失敗:", err)
+		return
+	}
+	handler.InitMailSender(mailsender.Config{
+		Host:     cfg.SMTPHost,
+		Port:     cfg.SMTPPort,
+		User:     cfg.SMTPUser,
+		Password: cfg.SMTPPassword,
+		From:     cfg.SMTPFrom,
+		Encoding: cfg.MailEncoding,
+	}, cfg.SystemTo)
+
+	handler.Static("/static/")
+	http.Handle("/", middleware.Chain(
+		http.HandlerFunc(router.Router),
+		middleware.Exception,
+		middleware.Session,
+		middleware.CSRF,
+	))
 
 	logger.Log("server starting on " + addr)
-	err := http.ListenAndServe(addr, nil)
+	err = http.ListenAndServe(addr, nil)
 	logger.ErrCheck(err)
 }

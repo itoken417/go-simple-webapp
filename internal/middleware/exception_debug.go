@@ -1,6 +1,6 @@
 //go:build !release
 
-package handler
+package middleware
 
 import (
 	"fmt"

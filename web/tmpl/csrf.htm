@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>CSRF サンプル</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    label { display: block; margin-top: 12px; }
+    input[type=text] { width: 100%; padding: 6px; box-sizing: border-box; }
+    button { margin-top: 12px; padding: 8px 24px; }
+    .result { margin-top: 20px; padding: 12px; background: #f0f4ff; border-left: 4px solid #4466cc; }
+    .error  { margin-top: 20px; padding: 12px; background: #fff0f0; border-left: 4px solid #cc4444; }
+  </style>
+</head>
+<body>
+  <h1>CSRF サンプルフォーム</h1>
+
+  {{if .Result}}
+  <div class="result">送信内容: <strong>{{.Result}}</strong></div>
+  {{end}}
+  {{if .Error}}
+  <div class="error">{{.Error}}</div>
+  {{end}}
+
+  <form method="POST" action="/csrf-sample">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <label>メッセージ
+      <input type="text" name="message" placeholder="何か入力してください">
+    </label>
+    <button type="submit">送信</button>
+  </form>
+
+  <p style="margin-top:32px;font-size:0.85em;color:#888;">
+    csrf_token Cookie: <code>{{.CSRFToken}}</code>
+  </p>
+</body>
+</html>

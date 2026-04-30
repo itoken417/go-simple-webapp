@@ -1,2 +1,4 @@
 CLAUDE.local.md
 .env
+.secret
+data/member.json
