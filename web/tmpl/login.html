@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ログイン</title>
+  <style>
+    body { font-family: sans-serif; max-width: 400px; margin: 80px auto; }
+    label { display: block; margin-top: 12px; }
+    input[type=email], input[type=password] { width: 100%; padding: 6px; box-sizing: border-box; }
+    button { margin-top: 16px; padding: 8px 24px; width: 100%; }
+    .error { margin-top: 16px; padding: 12px; background: #fff0f0; border-left: 4px solid #cc4444; }
+  </style>
+</head>
+<body>
+  <h1>ログイン</h1>
+
+  {{if .Error}}
+  <div class="error">{{.Error}}</div>
+  {{end}}
+
+  <form method="POST" action="/login">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <label>メールアドレス
+      <input type="email" name="email" value="{{.Email}}" required autofocus>
+    </label>
+    <label>パスワード
+      <input type="password" name="password" required>
+    </label>
+    <button type="submit">ログイン</button>
+  </form>
+</body>
+</html>

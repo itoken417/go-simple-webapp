@@ -21,6 +21,9 @@ func init() {
 	router.Add("/panic", (*handler.Hdl).Panic)
 	router.AddGet("/csrf", (*handler.Hdl).CsrfForm)
 	router.AddPost("/csrf", (*handler.Hdl).Csrf)
+	router.AddGet("/login", (*handler.Hdl).LoginForm)
+	router.AddPost("/login", (*handler.Hdl).Login)
+	router.AddPost("/logout", (*handler.Hdl).Logout)
 }
 
 const addr = ":8080"
@@ -54,6 +57,7 @@ func main() {
 		middleware.Exception,
 		middleware.Session,
 		middleware.CSRF,
+		middleware.RequireLogin([]string{"/"}),
 	))
 
 	logger.Log("server starting on " + addr)

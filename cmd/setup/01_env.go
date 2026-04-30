@@ -15,31 +15,31 @@ const (
 	envFile     = ".env"
 )
 
-func main() {
+func init() {
+	register("01 環境設定", setupEnv)
+}
+
+func setupEnv(stdin *bufio.Reader) error {
 	logger.Init(true, false)
 	defer logger.Destory()
-
-	stdin := bufio.NewReader(os.Stdin)
 
 	if _, err := os.Stat(envFile); err == nil {
 		fmt.Printf("%s はすでに存在します。上書きしますか？ [y/N]: ", envFile)
 		answer, _ := stdin.ReadString('\n')
 		if strings.ToLower(strings.TrimSpace(answer)) != "y" {
 			fmt.Println("キャンセルしました。")
-			return
+			return nil
 		}
 	}
 
 	encKey, err := loadOrGenerateKey()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "鍵の準備に失敗しました: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("鍵の準備に失敗しました: %w", err)
 	}
 
 	src, err := os.Open(exampleFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s を開けません: %v\n", exampleFile, err)
-		os.Exit(1)
+		return fmt.Errorf("%s を開けません: %w", exampleFile, err)
 	}
 	defer src.Close()
 
@@ -74,8 +74,7 @@ func main() {
 		if name == "SMTP_PASSWORD" {
 			ciphertext, nonce, err := secret.Encrypt(val, encKey)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "暗号化失敗: %v\n", err)
-				os.Exit(1)
+				return fmt.Errorf("暗号化失敗: %w", err)
 			}
 			lines = append(lines, "SMTP_PASSWORD_ENCRYPTED="+ciphertext)
 			lines = append(lines, "SMTP_PASSWORD_SALT="+nonce)
@@ -87,8 +86,7 @@ func main() {
 
 	dst, err := os.Create(envFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s を作成できません: %v\n", envFile, err)
-		os.Exit(1)
+		return fmt.Errorf("%s を作成できません: %w", envFile, err)
 	}
 	defer dst.Close()
 
@@ -97,11 +95,11 @@ func main() {
 		fmt.Fprintln(w, line)
 	}
 	if err := w.Flush(); err != nil {
-		fmt.Fprintf(os.Stderr, "書き込みエラー: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("書き込みエラー: %w", err)
 	}
 
 	fmt.Printf("\n%s を作成しました。\n", envFile)
+	return nil
 }
 
 func loadOrGenerateKey() ([]byte, error) {
